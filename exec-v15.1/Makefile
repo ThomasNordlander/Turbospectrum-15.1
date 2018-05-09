@@ -154,10 +154,10 @@ LINKOPT        = -B/usr/lib -convert big_endian -fp-model precise   -O3 -fpe3 -f
 #OPT1 = -convert big_endian -O0 -g -C -traceback -save -fpe0
 #LINKOPT = -convert big_endian -O0 -g -C -traceback -save -fpe0
 
-#clean : 
-#	rm *.o bsyn_lu babsma_lu eqwidt_lu 
-
 all : babsma_lu bsyn_lu eqwidt_lu 
+
+clean : 
+	rm *.o bsyn_lu babsma_lu eqwidt_lu 
 
 babsma_lu : $(babsma_luobj)
 	$(F) $(LINKOPT) -o babsma_lu $(babsma_luobj)
