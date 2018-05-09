@@ -125,6 +125,10 @@ cc      data edge /912., 3647., 8207., 14588., 22794., 32915./
 cc* air edges from continuous opacity file.
       integer version
       data version /151/
+      
+      doubleprecision cvel
+      parameter ( cvel = 2.99792458d5 )
+
 
       print*
       print*,'***********************'
@@ -188,14 +192,27 @@ c bsyn uses air wavelengths:
       XL1L=XL1-XLMARG
       XL2R=XL2+XLMARG
 ************ !!! ******************
-      DEL=max(del,1.0d0)
+! 2018-05-08 TN: in velocity space, limit the wavelength step to 50 km/s. In wavelengths use 1 AA
+      if (del.lt.0d0) then
+        del=min(del,-50d0)
+      else
+        DEL=max(del,1.0d0)
+      endif
 ************ !!! ******************
-      maxlam=int((xl2-xl1)/del)+1
+      if (del.lt.0d0) then
+        maxlam=int(1 + log10(xl2/xl1) / log10(-del/cvel+1))+1
+      else
+        maxlam=int((xl2-xl1)/del)+1
+      endif
       if (maxlam.gt.lpoint) stop 'babsma: too many wavelengths'
       jmax=min(maxlam+100,lpoint)
 * concerning this min() see readmo, set up of the continuum opacities
       do j=1,jmax
-        xlambda(J)=XL1+dble(J-1)*DEL
+        if (del.lt.0d0) then
+          xlambda(J)=XL1*10**((J-1)*log10(xl2/xl1)/(maxlam-1))
+        else
+          xlambda(J)=XL1+dble(J-1)*DEL
+        endif
 cc        do k=1,ndp
 cc          abso(k,j)=0.0
 cc          absos(k,j)=0.0
@@ -214,8 +231,14 @@ cc        enddo
 c              if (xlambda(j).gt.edge(k)) then
               if (xlambda(j).ge.edge(k)) then
                 xlambda(j)=edge(k)
-                xlambda(j-1)=edge(k)-min(datdel,0.9d0)
-                xlambda(j+1)=edge(k)+min(datdel,0.9d0)
+! 2018-05-08 TN: With velocity spacing, use dlambda ~ lambda*dv/c
+                if (datdel.lt.0d0) then
+                  xlambda(j-1)=edge(k)-min(-edge(k)*datdel/cvel,0.9d0)
+                  xlambda(j+1)=edge(k)+min(-edge(k)*datdel/cvel,0.9d0)
+                else
+                  xlambda(j-1)=edge(k)-min(datdel,0.9d0)
+                  xlambda(j+1)=edge(k)+min(datdel,0.9d0)
+                endif
                 print*,'Found edge: ',edge(k),xlambda(j-1),xlambda(j),
      &                  xlambda(j+1)
                 if (xlambda(j-1).le.xlambda(j-2)) then

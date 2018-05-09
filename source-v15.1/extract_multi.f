@@ -2,6 +2,7 @@
 
 * read multi output from bsyn
 * BPz 15/07-04
+! Modification 2018-05-08 TN: if negative, del gives velocity steps in km/s.
 *
       implicit none
       character*128 filein
@@ -36,9 +37,15 @@
       read(10) (abso(k,j),k=1,ntau),j=1,maxlam)
       read(10) ((absos(k,j)*ross(k),k=1,ntau),j=1,maxlam)
 
-      do j=1,maxlam
-        lambda(j)=xl1+(j-1)*del
-      enddo
+      if (del.lt.0d0) then
+        do j=1,maxlam
+          lambda(j)=xl1*10**((j-1)*log10(xl2/xl1)/(maxlam-1))
+        enddo
+      else 
+        do j=1,maxlam
+          lambda(j)=xl1+(j-1)*del
+        enddo
+      endif
 
       stop
       end

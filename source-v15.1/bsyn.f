@@ -22,6 +22,9 @@
 *
 * New jon/eqmol_pe_lu/die_pe_lu . Solves chemical equilibrium with 
 * matrix inversion.  BPz 09/07-1999
+* 
+! Modification 2018-05-08 TN: if negative, del gives velocity steps in km/s.
+! 
 *-----------------------------------------------------------------------
 *
       INCLUDE 'spectrum.inc'
@@ -176,6 +179,9 @@
       data nat/92/
       logical newformat
       character oneline*256
+      
+      doubleprecision cvel
+      parameter ( cvel = 2.99792458d5 )
 
 ccc      external commn_handler
 
@@ -485,11 +491,24 @@ ccc          stop
       XLM=(XL1+XL2)/2.
       XL1L=XL1-XLMARG
       XL2R=XL2+XLMARG
-      maxlam=int((xl2-xl1)/del)+1
+! 2018-05-08 TN: compute number of wavelength points on a grid equidistant in velocity:
+!     That means wavelengths are log-equidistant, so use 
+!     lambda_i = lambda_0 *10^(i/(N-1)*log(wN/w1)) and solve for i=1
+!     when lambda_1-lambda_0 ~ dlambda ~ lambda0*dv/c.
+      if (del.lt.0) then
+        maxlam=int(1 + log10(xl2/xl1) / log10(-del/cvel+1))+1
+      else
+        maxlam=int((xl2-xl1)/del)+1
+      endif
       if (maxlam.gt.lpoint) stop 'bsyn: too many wavelengths'
       do 400 j=1,min(maxlam+100,lpoint)
 * concerning this min() see readmo, set up of the continuum opacities
-       xlambda(J)=XL1+FLOAT(J-1)*DEL
+! 2018-05-08 TN: wavelengths equidistant in velocity:
+       if (del.lt.0d0) then
+         xlambda(J)=XL1*10**((J-1)*log10(xl2/xl1)/(maxlam-1))
+       else 
+         xlambda(J)=XL1+FLOAT(J-1)*DEL
+       endif
        do 401 k=1,ndp
         abso(k,j)=0.0
         absos(k,j)=0.0
@@ -1110,7 +1129,18 @@ cc      IF(IP.GE.1) WRITE(7,265) LELE,ABUL,ABUND,NTAU
 * Start wavelength loop for this line
 *
 ccc      print*,xlb
-      zap=(xlb-xl1)/del
+! 2018-05-08 TN: zap = index of the wavelength point?
+!      Can use dlambda ~ lambda0 * dv / c, where dv = abs(del)
+!      but that isn't exact! Better to invert the exact formula
+!      lambda = lambda0 * 10**(zap/(maxlam-1)*log(xl2/xl1))
+!      log(lambda/lambda0) = zap/(maxlam-1)*log(xl2/xl1)
+!             
+      if (del.gt.0d0) then
+        zap=(xlb-xl1)/del
+      else
+        zap = (maxlam-1)*log10(xlb/xl1)/log10(xl2/xl1) ! exact
+!        zap=(xlb-xl1)*2.99792458d5/(xlb*abs(del)) ! approximation
+      endif
       IF (zap.le.0.) THEN
 * treatment of the lines lying between xl1l and xl1
        do k=1,ntau

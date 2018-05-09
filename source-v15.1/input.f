@@ -1,5 +1,7 @@
       subroutine input
 *
+! Modification 2018-05-08 TN: if negative, del gives velocity steps in km/s.
+! 
 * Ecrire un mode d'emploi.
 *
 * reads input from file 5
@@ -85,7 +87,7 @@ ccc      inatom='DATA/atomdata-v12.1'
       xlmarg=2.d0
       xl1=-10.d0
       xl2=-10.d0
-      del=-10.d0
+      del=0.d0
 *
 1     read(iread,*,end=99) keyword,charvalue
 
@@ -213,7 +215,7 @@ ccc        read(iread,*) filterfil
       goto 1
 99    continue
 
-      if (xl1.lt.0.d0.or.xl2.lt.0.d0.or.del.lt.0.d0) then
+      if (xl1.lt.0.d0.or.xl2.lt.0.d0.or.del.eq.0.d0) then
         print*,'ERROR! Provide lambda min max and deltalambda!'
         print*,'xl1 xl2 del =',xl1,xl2,del
         stop

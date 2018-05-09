@@ -168,6 +168,10 @@
       logical newformat
       character oneline*256
 
+      doubleprecision cvel
+      parameter ( cvel = 2.99792458d5 )
+
+
 ccc      external commn_handler
 
       tsuswitch =.false.
@@ -1040,12 +1044,22 @@ cc        contop(j)=x(j)+s(j)
       do iloop=int(lpoint/2)+1,lpoint,1
         xkmax=0.
         i=iloop-int(lpoint/2)-1
-        xlambda(iloop)=xlb+float(i)*del
+! 2018-05-09 TN: small wavelength steps, dlambda ~ lambda*dv/c
+        if (del.lt.0d0) then
+          xlambda(iloop)=xlb*(1-float(i)*del/cvel)
+        else
+          xlambda(iloop)=xlb+float(i)*del
+        endif
         if (xlambda(iloop).gt.xl2) then 
           lmax=iloop-1
           goto 155
         endif
-        vt=(float(i)*del)*1.d-8
+! 2018-05-09 TN: small wavelength steps, dlambda ~ lambda*dv/c
+        if (del.lt.0d0) then
+          vt = -xlb*float(i)*del/cvel * 1.d-8
+        else
+          vt=(float(i)*del)*1.d-8
+        endif
         vt=c*vt/xl**2
         do j=1,ntau
           v=vt/dnud(j)
@@ -1074,12 +1088,21 @@ cc      goto 2345
       do iloop=int(lpoint/2),1,-1
         xkmax=0.0
         i=int(lpoint/2)+1-iloop
-        xlambda(iloop)=xlb-float(i)*del
+        if (del.lt.0d0) then
+          xlambda(iloop)=xlb*(1+float(i)*del/cvel)
+        else
+          xlambda(iloop)=xlb-float(i)*del
+        endif
         if (xlambda(iloop).lt.xl1) then 
           lmin=iloop+1
           goto 165
         endif
-        vt=(float(i)*del)*1.d-8
+! 2018-05-09 TN: small wavelength steps, dlambda ~ lambda*dv/c
+        if (del.lt.0d0) then
+          vt = -xlb*float(i)*del/cvel * 1.d-8
+        else
+          vt=(float(i)*del)*1.d-8
+        endif
         vt=c*vt/xl**2
         do j=1,ntau
           v=vt/dnud(j)

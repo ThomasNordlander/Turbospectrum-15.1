@@ -44,6 +44,9 @@
       logical findtau1,hydrovelo,first
       real velocity
       common/velo/velocity(ndp),hydrovelo
+      
+      doubleprecision cvel
+      parameter ( cvel = 2.99792458d5 )
 *
 * NLBLDU is a dummy, real val. of NLBL is set as parameter
 *
@@ -177,7 +180,12 @@ cc            fluxme(j)=hsurf*4.
             endif
             PROF=1.-PRF
           END IF
-          eqwidth=eqwidth+(prof+profold)*del/2.
+! 2018-05-09 TN: small wavelength steps, dlambda ~ lambda*dv/c
+          if (del.lt.0d0) then
+            eqwidth=eqwidth+(prof+profold)*(-xlsingle*del/cvel)/2.
+          else
+            eqwidth=eqwidth+(prof+profold)*del/2.
+          endif
           profold=prof
 *
 39      CONTINUE

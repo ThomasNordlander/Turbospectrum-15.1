@@ -71,6 +71,8 @@ CCC      COMMON/CANGLE/ NMY,XMY(6),XMY2(6),WMY(6)
 *
       DATA first/.true./
       data debug/.false./
+      doubleprecision cvel
+      parameter ( cvel = 2.99792458d5 )
       PI=3.141593
 *
 * Initiate mode of calculation
@@ -192,7 +194,12 @@ C
 * End of spherical fluxes
 *
         PROF=1.-PRF
-        eqwidth=eqwidth+(prof+profold)*del/2.
+! 2018-05-09 TN: small wavelength steps, dlambda ~ lambda*dv/c
+        if (del.lt.0d0) then
+          eqwidth=eqwidth+(prof+profold)*(-xlsingle*del/cvel)/2.
+        else
+          eqwidth=eqwidth+(prof+profold)*del/2.
+        endif
         profold=prof
    39 CONTINUE
 *

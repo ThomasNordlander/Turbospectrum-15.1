@@ -9,6 +9,7 @@
 * calculates the spectra.
 *
 * Export version  1988-03-24  ********* Olof Morell *** Uppsala
+! Modification 2018-05-08 TN: if negative, del gives velocity steps in km/s.
 *
 *-----------------------------------------------------------------------
 *
@@ -72,6 +73,8 @@ CCC      COMMON/CANGLE/ NMY,XMY(6),XMY2(6),WMY(6)
       DATA IBLNK/'    '/,profold/0./,first/.true./
       data debug/.false./
 
+      doubleprecision cvel
+      parameter ( cvel = 2.99792458d5 )
 
       PI=3.141593
 *
@@ -189,11 +192,18 @@ ccc          x(k)=xc(k)+abso(k,j)
 * the line position is shifted [(lambda_0-lambda)/lambda_0=v/c],
 * xlb_vshifted=xlb*lshift, with lshift(k)=1.d0-velocity/c
 * (Here Velocity contains velocity/c_light, and shift=1-velocity)
+! 
+! 2018-05-08 TN: For the case of wavelengths equidistant in velocity space, 
+!     Use the approximation dlambda ~ lambda0 * dv / c, where dv = abs(del)
 *
               do k=1,ntaui
                 shiftmax=(-velocity(k))*xlsingle
 * avoid n=0 for small shiftmax (+2)
-                n=(int(abs(shiftmax)/del)+2)
+                if (del.lt.0d0) then
+                  n=(int(abs(shiftmax*cvel/del)/xlsingle)+2)
+                else 
+                  n=(int(abs(shiftmax)/del)+2)
+                endif
                 jmin=max(j-n,1)
                 jmax=min(j+n,maxlam)
                 n=jmax-jmin+1
